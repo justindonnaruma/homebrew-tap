@@ -9,14 +9,17 @@ on:
     branches: [main]
     paths:
       - "Formula/**"
+      - ".github/workflows/test.yml"
   workflow_dispatch:
 
 jobs:
   test:
+    # macos-14 covers Apple Silicon, ubuntu-latest covers Linux. macos-13 is
+    # omitted — those runners are routinely queued for hours, blocking CI.
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-13, ubuntu-latest]
+        os: [macos-14, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
