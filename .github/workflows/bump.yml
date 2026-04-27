@@ -31,16 +31,19 @@ jobs:
           tag=$(gh release view --repo tombii/better-ccflare --json tagName -q .tagName)
           upstream="${tag#v}"
           current=$(grep -E '^\s*version\s+"' Formula/better-ccflare.rb | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
-          echo "tag=$tag"               >> "$GITHUB_OUTPUT"
-          echo "upstream=$upstream"     >> "$GITHUB_OUTPUT"
-          echo "current=$current"       >> "$GITHUB_OUTPUT"
           if [ "$upstream" = "$current" ]; then
             echo "Formula already at $current; nothing to do."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
+            skip=true
           else
             echo "Bumping $current -> $upstream"
-            echo "skip=false" >> "$GITHUB_OUTPUT"
+            skip=false
           fi
+          {
+            echo "tag=$tag"
+            echo "upstream=$upstream"
+            echo "current=$current"
+            echo "skip=$skip"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Compute new SHA256s
         if: steps.versions.outputs.skip == 'false'
