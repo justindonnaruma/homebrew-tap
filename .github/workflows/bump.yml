@@ -1,0 +1,106 @@
+name: Bump better-ccflare
+
+on:
+  schedule:
+    # Daily at 06:00 UTC. Upstream tends to ship patch releases in the early UTC hours.
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [upstream-release]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: bump-better-ccflare
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve upstream + current versions
+        id: versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag=$(gh release view --repo tombii/better-ccflare --json tagName -q .tagName)
+          upstream="${tag#v}"
+          current=$(grep -E '^\s*version\s+"' Formula/better-ccflare.rb | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "tag=$tag"               >> "$GITHUB_OUTPUT"
+          echo "upstream=$upstream"     >> "$GITHUB_OUTPUT"
+          echo "current=$current"       >> "$GITHUB_OUTPUT"
+          if [ "$upstream" = "$current" ]; then
+            echo "Formula already at $current; nothing to do."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Bumping $current -> $upstream"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute new SHA256s
+        if: steps.versions.outputs.skip == 'false'
+        id: shas
+        run: |
+          set -euo pipefail
+          tag="${{ steps.versions.outputs.tag }}"
+          base="https://github.com/tombii/better-ccflare/releases/download/${tag}"
+          declare -A out=(
+            [macos_arm64]="better-ccflare-macos-arm64"
+            [macos_x86_64]="better-ccflare-macos-x86_64"
+            [linux_arm64]="better-ccflare-linux-arm64"
+            [linux_amd64]="better-ccflare-linux-amd64"
+          )
+          for key in "${!out[@]}"; do
+            asset="${out[$key]}"
+            sha=$(curl -fsSL "${base}/${asset}" | sha256sum | cut -d' ' -f1)
+            echo "${key}=${sha}"
+            echo "${key}=${sha}" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Update formula
+        if: steps.versions.outputs.skip == 'false'
+        env:
+          OLD_VERSION: ${{ steps.versions.outputs.current }}
+          NEW_VERSION: ${{ steps.versions.outputs.upstream }}
+          SHA_MACOS_ARM64:  ${{ steps.shas.outputs.macos_arm64 }}
+          SHA_MACOS_X86_64: ${{ steps.shas.outputs.macos_x86_64 }}
+          SHA_LINUX_ARM64:  ${{ steps.shas.outputs.linux_arm64 }}
+          SHA_LINUX_AMD64:  ${{ steps.shas.outputs.linux_amd64 }}
+        run: |
+          set -euo pipefail
+          f=Formula/better-ccflare.rb
+          # Version bump (anchored to 'version "X.Y.Z"' line).
+          sed -i -E "s|^(\s*version\s+\")${OLD_VERSION}(\".*)$|\1${NEW_VERSION}\2|" "$f"
+          # SHA bumps — each sha256 line is tagged with a stable trailing comment we anchor on.
+          sed -i -E "s|sha256 \"[a-f0-9]{64}\"(\s*# sha:macos-arm64)|sha256 \"${SHA_MACOS_ARM64}\"\1|"   "$f"
+          sed -i -E "s|sha256 \"[a-f0-9]{64}\"(\s*# sha:macos-x86_64)|sha256 \"${SHA_MACOS_X86_64}\"\1|" "$f"
+          sed -i -E "s|sha256 \"[a-f0-9]{64}\"(\s*# sha:linux-arm64)|sha256 \"${SHA_LINUX_ARM64}\"\1|"   "$f"
+          sed -i -E "s|sha256 \"[a-f0-9]{64}\"(\s*# sha:linux-amd64)|sha256 \"${SHA_LINUX_AMD64}\"\1|"   "$f"
+          # Sanity: ensure version was actually rewritten.
+          grep -q "version \"${NEW_VERSION}\"" "$f"
+          # Sanity: ensure no SHA line still uses an old hash that wasn't replaced.
+          if grep -E 'sha256 "[a-f0-9]{64}"  # sha:' "$f" | grep -v "${SHA_MACOS_ARM64}\|${SHA_MACOS_X86_64}\|${SHA_LINUX_ARM64}\|${SHA_LINUX_AMD64}"; then
+            echo "::error::A sha256 line was not rewritten. Aborting."
+            exit 1
+          fi
+
+      - name: Open pull request
+        if: steps.versions.outputs.skip == 'false'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: bump/better-ccflare-${{ steps.versions.outputs.upstream }}
+          base: main
+          title: "better-ccflare ${{ steps.versions.outputs.upstream }}"
+          body: |
+            Automated bump of `better-ccflare` from `${{ steps.versions.outputs.current }}` to `${{ steps.versions.outputs.upstream }}`.
+
+            Upstream release: https://github.com/tombii/better-ccflare/releases/tag/${{ steps.versions.outputs.tag }}
+
+            SHA256s recomputed from the published release assets.
+          commit-message: "better-ccflare ${{ steps.versions.outputs.upstream }}"
+          delete-branch: true

@@ -1,0 +1,41 @@
+name: Test formula
+
+on:
+  pull_request:
+    paths:
+      - "Formula/**"
+      - ".github/workflows/test.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Formula/**"
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-13, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: brew style
+        run: brew style Formula/better-ccflare.rb
+
+      - name: brew audit
+        run: brew audit --formula --strict --online Formula/better-ccflare.rb || true
+
+      - name: brew install (from local formula)
+        run: brew install --formula --verbose ./Formula/better-ccflare.rb
+
+      - name: brew test
+        run: brew test --verbose better-ccflare
+
+      - name: brew uninstall
+        if: always()
+        run: brew uninstall --force better-ccflare || true
