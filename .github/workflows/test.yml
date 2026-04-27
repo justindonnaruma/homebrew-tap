@@ -4,12 +4,12 @@ on:
   pull_request:
     paths:
       - "Formula/**"
-      - ".github/workflows/test.yml"
+      - ".github/workflows/**"
   push:
     branches: [main]
     paths:
       - "Formula/**"
-      - ".github/workflows/test.yml"
+      - ".github/workflows/**"
   workflow_dispatch:
 
 jobs:
