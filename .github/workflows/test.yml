@@ -24,18 +24,29 @@ jobs:
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@master
 
+      - name: Mount checkout as tap
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAP_DIR="$(brew --repository)/Library/Taps/justindonnaruma/homebrew-tap"
+          mkdir -p "$(dirname "$TAP_DIR")"
+          # setup-homebrew may have already tapped from origin; replace with our checkout
+          rm -rf "$TAP_DIR"
+          ln -s "$GITHUB_WORKSPACE" "$TAP_DIR"
+          brew tap | grep -q "^justindonnaruma/tap$" || brew tap justindonnaruma/tap
+
       - name: brew style
-        run: brew style Formula/better-ccflare.rb
+        run: brew style justindonnaruma/tap
 
       - name: brew audit
-        run: brew audit --formula --strict --online Formula/better-ccflare.rb || true
+        run: brew audit --formula --strict --online justindonnaruma/tap/better-ccflare || true
 
-      - name: brew install (from local formula)
-        run: brew install --formula --verbose ./Formula/better-ccflare.rb
+      - name: brew install
+        run: brew install --verbose justindonnaruma/tap/better-ccflare
 
       - name: brew test
-        run: brew test --verbose better-ccflare
+        run: brew test --verbose justindonnaruma/tap/better-ccflare
 
       - name: brew uninstall
         if: always()
-        run: brew uninstall --force better-ccflare || true
+        run: brew uninstall --force justindonnaruma/tap/better-ccflare || true
