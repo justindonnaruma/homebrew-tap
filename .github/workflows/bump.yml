@@ -97,6 +97,13 @@ jobs:
         id: pr
         uses: peter-evans/create-pull-request@v7
         with:
+          # PRs opened with the default GITHUB_TOKEN do NOT trigger other
+          # workflows (GitHub's recursion guard), so test.yml never runs and the
+          # required status checks never report — leaving the PR BLOCKED forever
+          # with auto-merge unable to fire. Open the PR with a PAT (BUMP_PAT) so
+          # the pull_request event triggers test.yml. Falls back to GITHUB_TOKEN
+          # if the secret is absent (PR opens but stays blocked until set).
+          token: ${{ secrets.BUMP_PAT || secrets.GITHUB_TOKEN }}
           branch: bump/better-ccflare-${{ steps.versions.outputs.upstream }}
           base: main
           title: "better-ccflare ${{ steps.versions.outputs.upstream }}"
