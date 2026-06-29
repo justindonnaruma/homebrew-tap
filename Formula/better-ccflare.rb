@@ -3,6 +3,7 @@ class BetterCcflare < Formula
   homepage "https://github.com/tombii/better-ccflare"
   version "3.5.32"
   license "MIT"
+  revision 1
 
   on_macos do
     on_arm do
@@ -43,6 +44,19 @@ class BetterCcflare < Formula
   end
 
   def caveats
+    base_url = "http://localhost:8080"
+    case File.basename(ENV.fetch("SHELL", ""))
+    when "fish"
+      rc = "~/.config/fish/config.fish"
+      export_line = "set -gx ANTHROPIC_BASE_URL #{base_url}"
+    when "bash"
+      rc = "~/.bash_profile"
+      export_line = "export ANTHROPIC_BASE_URL=#{base_url}"
+    else
+      rc = "~/.zshrc"
+      export_line = "export ANTHROPIC_BASE_URL=#{base_url}"
+    end
+
     <<~EOS
       To start better-ccflare now and on every login:
         brew services start better-ccflare
@@ -50,8 +64,18 @@ class BetterCcflare < Formula
       To run it in the foreground without a background service:
         better-ccflare --serve
 
+      Point Claude Code at the proxy by setting ANTHROPIC_BASE_URL.
+      Homebrew can't edit your shell for you, but this one-liner persists it
+      so every new shell picks it up automatically:
+        echo '#{export_line}' >> #{rc}
+
+      Apply it to your current shell now with:
+        #{export_line}
+
+      No API key needed when Claude CLI is already logged in via OAuth.
+
       Once running, the dashboard is at:
-        http://localhost:8080
+        #{base_url}
 
       Data and config live in:
         ~/.config/better-ccflare/
