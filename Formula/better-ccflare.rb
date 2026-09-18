@@ -1,28 +1,28 @@
 class BetterCcflare < Formula
   desc "Claude Code proxy with load balancing, account rotation and a dashboard"
   homepage "https://github.com/tombii/better-ccflare"
-  version "3.5.86"
+  version "3.5.88"
   license "MIT"
 
   on_macos do
     on_arm do
       url "https://github.com/tombii/better-ccflare/releases/download/v#{version}/better-ccflare-macos-arm64"
-      sha256 "fc20266e7adc0ca6e8e6042df4f9a1c6dc258b38b9526cb4f137256c5a5917cb" # sha:macos-arm64
+      sha256 "33289886fa0e40feb44f9c03dab0979f3714a4920107313413d343e106fea0ae" # sha:macos-arm64
     end
     on_intel do
       url "https://github.com/tombii/better-ccflare/releases/download/v#{version}/better-ccflare-macos-x86_64"
-      sha256 "a1f5969670c95484ebd36c51a8a27faaeabad99e56f643668250d86038470924" # sha:macos-x86_64
+      sha256 "0f82544a717c889357a6bd07c9e1565cc686c95d918326371c620009148c3d74" # sha:macos-x86_64
     end
   end
 
   on_linux do
     on_arm do
       url "https://github.com/tombii/better-ccflare/releases/download/v#{version}/better-ccflare-linux-arm64"
-      sha256 "c5295522b13d51a52c636d1fcbf2b823c4fe81b2ea2e4ff5397b6c6485713c7a" # sha:linux-arm64
+      sha256 "c41c52c9281c5ab28f96fb1e941edbd4b062e21729f4b58fd2420266491f30ae" # sha:linux-arm64
     end
     on_intel do
       url "https://github.com/tombii/better-ccflare/releases/download/v#{version}/better-ccflare-linux-amd64"
-      sha256 "ae669edc5592737693b876297ec9f6221704103cde6ae645c77b6c6c222d12df" # sha:linux-amd64
+      sha256 "07ecd61c7a499673789b73cd108dd1c8f9446bee4a720fca405aef597adb9f86" # sha:linux-amd64
     end
   end
 
