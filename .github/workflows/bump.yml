@@ -79,6 +79,8 @@ jobs:
           f=Formula/better-ccflare.rb
           # Version bump (anchored to 'version "X.Y.Z"' line).
           sed -i -E "s|^(\s*version\s+\")${OLD_VERSION}(\".*)$|\1${NEW_VERSION}\2|" "$f"
+          # A version bump supersedes any packaging-only revision; drop the revision line.
+          sed -i -E '/^[[:space:]]*revision[[:space:]]+[0-9]+[[:space:]]*$/d' "$f"
           # SHA bumps — each sha256 line is tagged with a stable trailing comment we anchor on.
           sed -i -E "s|sha256 \"[a-f0-9]{64}\"(\s*# sha:macos-arm64)|sha256 \"${SHA_MACOS_ARM64}\"\1|"   "$f"
           sed -i -E "s|sha256 \"[a-f0-9]{64}\"(\s*# sha:macos-x86_64)|sha256 \"${SHA_MACOS_X86_64}\"\1|" "$f"

@@ -27,6 +27,16 @@ brew services start better-ccflare
 
 That registers a launchd (macOS) / systemd (Linux) job that starts on login and restarts on crash. The dashboard is at <http://localhost:8080>; data lives in `~/.config/better-ccflare/`.
 
+#### Point Claude Code at the proxy
+
+Claude Code routes through better-ccflare when `ANTHROPIC_BASE_URL` is set. Homebrew can't edit your shell environment for you, but the formula's `caveats` print a shell-aware one-liner. For zsh that's:
+
+```sh
+echo 'export ANTHROPIC_BASE_URL=http://localhost:8080' >> ~/.zshrc
+```
+
+No API key is needed when the Claude CLI is already logged in via OAuth. Re-run `brew info better-ccflare` any time to see the exact line for your shell.
+
 To stop:
 
 ```sh
